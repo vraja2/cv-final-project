@@ -1,7 +1,8 @@
 function classifier
     images = read_images('./training_data/train');
     labels = read_labels();
-    [descriptors,labels] = get_sift(images);
+    [descriptors,labels] = get_sift(images,labels,100);
+    save('classifier.mat');
 end
 
 function I = imreadbw(file)
@@ -33,18 +34,21 @@ function images = read_images(imdir)
     end
 end 
 
-function [descriptors,labels] = get_sift(images,im_labels)
-    addpath ./sift
+function [descriptors,labels] = get_sift(images,im_labels,vectors_per_im)
     addpath ./vlfeat-0.9.20
     [m,n] = size(images);
+    descriptors = [];
+    labels = [];
     for i = 1:n
         tic
-        %[frames,descr,gss,dogss] = sift(images{i},'Verbosity',1);    
         [f,d] = vl_sift(images{i});
+        %select 100 random sift feature vectors for each image
         perm = randperm(size(f,2));
-        sel = perm(1:100);
+        sel = perm(1:vectors_per_im);
         sel_descriptors = d(:,sel);
         descriptors = [descriptors sel_descriptors];
+        descriptor_labels = im_labels(i)*ones(1,vectors_per_im);
+        labels = [labels descriptor_labels];
         toc
     end
 end
