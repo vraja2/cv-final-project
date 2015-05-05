@@ -1,7 +1,7 @@
 function classifier
-    images = read_images('./training_data/train');
+    addpath ./vlfeat-0.9.20
     labels = read_labels();
-    [descriptors,labels] = get_sift(images,labels,100);
+    [descriptors,labels] = get_sift('./training_data/train',labels,100);
     save('classifier.mat');
 end
 
@@ -22,26 +22,18 @@ function labels = read_labels()
     labels = parsed{2};
 end
 
-function images = read_images(imdir)
-    addpath ./vlfeat-0.9.20
+function [descriptors,labels] = get_sift(imdir,im_labels,vectors_per_im)
     files = dir(fullfile(imdir, '*.jpeg'));
-    for f = 1:2
-        fn = files(f).name;
+    n = numel(files);
+    descriptors = [];
+    labels = [];
+    for i = 1:2
+        fn = files(i).name;
         im = imreadbw(fullfile(imdir,fn));
         im = im-min(im(:));
         im = im/max(im(:));
-        images{f} = im;
-    end
-end 
-
-function [descriptors,labels] = get_sift(images,im_labels,vectors_per_im)
-    addpath ./vlfeat-0.9.20
-    [m,n] = size(images);
-    descriptors = [];
-    labels = [];
-    for i = 1:n
         tic
-        [f,d] = vl_sift(images{i});
+        [f,d] = vl_sift(im);
         %select 100 random sift feature vectors for each image
         perm = randperm(size(f,2));
         sel = perm(1:vectors_per_im);
