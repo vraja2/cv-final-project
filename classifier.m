@@ -3,7 +3,8 @@ function classifier
     labels = read_labels();
     %[descriptors,labels] = get_sift('./training_data/train',labels,100);
     %save('classifier.mat');
-    [descriptors,labels] = load_sift();
+    [descriptors,~] = load_sift();
+    labels = construct_sift_labels();
     [reduced_samples,reduced_labels] = reduce_sample_size(descriptors,labels);
     [sliced_descriptors,sliced_labels] = slice_sift(reduced_samples,reduced_labels,10);
     perform_cross_validation(sliced_descriptors,sliced_labels);
@@ -13,6 +14,14 @@ function [descriptors,labels] = load_sift
     classifier_mat = load('classifier.mat');
     descriptors = classifier_mat.descriptors;
     labels = classifier_mat.labels;
+end
+
+function labels = construct_sift_labels
+    labels(1:50000) = 0;
+    labels(50001:100000) = 1;
+    labels(100001:150000) = 2;
+    labels(150001:200000) = 3;
+    labels(200001:250000) = 4;
 end
 
 function I = imreadbw(file)
@@ -31,7 +40,7 @@ function [reduced_samples,reduced_labels] = reduce_sample_size(descriptors,label
     reduced_labels = [];
     %50,000 vectors per class
     for i=1:50000:size(descriptors,2)
-        %reduce to 25 images per class from 500
+        %reduce to 150 images per class from 500
         for j=1:25
             reduced_samples = [reduced_samples descriptors(:,i+((j-1)*100):i+(j*100)-1)];
             reduced_labels = [reduced_labels labels(i+((j-1)*100):i+(j*100)-1)];
@@ -106,7 +115,7 @@ function models = build_models(train,labels)
     for k=1:5
         display(k);
         %binarize group so that only current group is selected
-        G1vAll = (labels==k);
+        G1vAll = (labels==(k-1));
         tic
         models{k} = fitcsvm(train',G1vAll','KernelFunction','linear');
         toc
@@ -115,16 +124,23 @@ end
 
 function evaluate(models,test_data,test_labels)
     num_correct = 0;
+    preds = []
     for j=1:numel(test_labels)
+        max_pred = -1;
+        max_score = -Inf;
         for k=1:5
-            [prediction,score] = predict(models{k},double(test_data(:,1)'));
-            if(prediction)
-               break; 
+            [prediction,score] = predict(models{k},double(test_data(:,j)'));
+            if score(2) > max_score
+                max_pred = prediction;
+                max_score = score(1);
             end
         end
-        if k == test_labels(j)
+        preds = [preds max_pred];
+        if max_pred == test_labels(j)
            num_correct = num_correct + 1; 
         end
     end
+    display(preds);
+    display(num_correct);
 end
 
