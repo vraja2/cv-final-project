@@ -25,14 +25,23 @@ end
 function [descriptors,labels] = get_sift(imdir,im_labels,vectors_per_im)
     files = dir(fullfile(imdir, '*.jpeg'));
     n = numel(files);
+    %create a list to store all the indices of images you want sift vectors
+    %for
+    l0_im = find(im_labels == 0);
+    l1_im = find(im_labels == 1);
+    l2_im = find(im_labels == 2);
+    l3_im = find(im_labels == 3);
+    l4_im = find(im_labels == 4);
+    %slice 500 images from each label
+    img_indices = [l0_im(1:500)',l1_im(1:500)',l2_im(1:500)',l3_im(1:500)',l4_im(1:500)'];
     descriptors = [];
     labels = [];
-    for i = 1:2
-        fn = files(i).name;
+    for i = 1:numel(img_indices)
+        display(i);
+        fn = files(img_indices(i)).name;
         im = imreadbw(fullfile(imdir,fn));
         im = im-min(im(:));
         im = im/max(im(:));
-        tic
         [f,d] = vl_sift(im);
         %select 100 random sift feature vectors for each image
         perm = randperm(size(f,2));
@@ -41,12 +50,11 @@ function [descriptors,labels] = get_sift(imdir,im_labels,vectors_per_im)
         descriptors = [descriptors sel_descriptors];
         descriptor_labels = im_labels(i)*ones(1,vectors_per_im);
         labels = [labels descriptor_labels];
-        toc
     end
 end
 
 function training_im = get_training
-
+    
 end
 
 function testing_im = get_testing
