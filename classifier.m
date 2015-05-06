@@ -4,8 +4,8 @@ function classifier
     %[descriptors,labels] = get_sift('./training_data/train',labels,100);
     %save('classifier.mat');
     [descriptors,labels] = load_sift();
-    reduced_samples = reduce_sample_size(descriptors);
-    [sliced_descriptors,sliced_labels] = slice_sift(descriptors,labels,10);
+    [reduced_samples,reduced_labels] = reduce_sample_size(descriptors,labels);
+    [sliced_descriptors,sliced_labels] = slice_sift(reduced_samples,reduced_labels,10);
     perform_cross_validation(sliced_descriptors,sliced_labels);
 end
 
@@ -26,13 +26,15 @@ function I = imreadbw(file)
     end
 end
 
-function reduced_samples = reduce_sample_size(descriptors)
-    reduced_samples = []
+function [reduced_samples,reduced_labels] = reduce_sample_size(descriptors,labels)
+    reduced_samples = [];
+    reduced_labels = [];
     %50,000 vectors per class
     for i=1:50000:size(descriptors,2)
         %reduce to 25 images per class from 500
         for j=1:25
             reduced_samples = [reduced_samples descriptors(:,i+((j-1)*100):i+(j*100)-1)];
+            reduced_labels = [reduced_labels labels(i+((j-1)*100):i+(j*100)-1)];
         end
     end
 end
@@ -81,10 +83,13 @@ function perform_cross_validation(training,labels)
     for i = 1:num_folds
         test = (indices == i); 
         train = ~test;
+        test_data = training(:,test);
+        test_labels = labels(test);
         train_data = training(:,train);
         train_labels = labels(train);
         %1 vs all svm training
-        models = build_models(double(train_data),train_labels);        
+        models = build_models(double(train_data),train_labels);    
+        evaluate(models,test_data,test_labels);
     end
 end
 
@@ -98,19 +103,28 @@ function [sliced_descriptors,sliced_labels] = slice_sift(descriptors,labels,num_
 end
 
 function models = build_models(train,labels)
-    for k=1:1
+    for k=1:5
+        display(k);
         %binarize group so that only current group is selected
         G1vAll = (labels==k);
         tic
-        models(k) = fitcsvm(train',G1vAll','KernelFunction','linear');
+        models{k} = fitcsvm(train',G1vAll','KernelFunction','linear');
         toc
     end
 end
 
-function training_im = get_training
-    
+function evaluate(models,test_data,test_labels)
+    num_correct = 0;
+    for j=1:numel(test_labels)
+        for k=1:5
+            [prediction,score] = predict(models{k},double(test_data(:,1)'));
+            if(prediction)
+               break; 
+            end
+        end
+        if k == test_labels(j)
+           num_correct = num_correct + 1; 
+        end
+    end
 end
 
-function testing_im = get_testing
-
-end
