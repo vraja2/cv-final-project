@@ -4,6 +4,7 @@ function classifier
     %[descriptors,labels] = get_sift('./training_data/train',labels,100);
     %save('classifier.mat');
     [descriptors,labels] = load_sift();
+    reduced_samples = reduce_sample_size(descriptors);
     [sliced_descriptors,sliced_labels] = slice_sift(descriptors,labels,10);
     perform_cross_validation(sliced_descriptors,sliced_labels);
 end
@@ -26,7 +27,14 @@ function I = imreadbw(file)
 end
 
 function reduced_samples = reduce_sample_size(descriptors)
-    %for i=1:100:size(descriptors,
+    reduced_samples = []
+    %50,000 vectors per class
+    for i=1:50000:size(descriptors,2)
+        %reduce to 25 images per class from 500
+        for j=1:25
+            reduced_samples = [reduced_samples descriptors(:,i+((j-1)*100):i+(j*100)-1)];
+        end
+    end
 end
 
 function labels = read_labels()
