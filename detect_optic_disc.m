@@ -1,5 +1,7 @@
 function detect_optic_disc(img)
     [h,w,d] = size(img);
+    [img_h, img_w, img_d] = size(img);
+    
     
     total_pixel_count = h*w;
     top_green_percentage = round(total_pixel_count * 5 / 1000);
@@ -37,7 +39,6 @@ function detect_optic_disc(img)
     CC_img(h*w,:) = temp;
     
     pixel_list = CC.PixelIdxList;
-    
     [sorted_length, sorted_ind] = sort_cell_list(pixel_list);
     
     % getting the largest connected region
@@ -45,7 +46,7 @@ function detect_optic_disc(img)
     optic_disc_pixel_list = pixel_list{1,optic_disc_pixel_list_ind};
     
     % computing optic_disc_center points
-    compute_bounding_disc(h,w,optic_disc_pixel_list);
+    [center_x, center_y, radius, vec_circle_pixels] = compute_bounding_disc(h,w,optic_disc_pixel_list);
     
     %{
     [optic_disc_ys, optic_disc_xs] = ind2sub([h,w], optic_disc_pixel_list);
@@ -68,39 +69,298 @@ function detect_optic_disc(img)
    % length_list = cellfun('length', pixel_list);
     
    
-   
+  
    % step2
-   compute_50_pixel_median_filter(h,w,img);
+   [hor_img_median, vert_img_median] = compute_50_pixel_median_filter(h,w,img);
+   subtracted_img = subtract_min_median(hor_img_median, vert_img_median, img);
+   [potential_exudate_map, potential_exudate_ys, potential_exudate_xs] = get_potential_exodus_pixels(h,w,subtracted_img, 10);
+   
+   confirmed_exudate_map = get_confirmed_exudate(img_h, img_w, subtracted_img, vec_img, vec_circle_pixels);
+   figure;
+   imagesc(confirmed_exudate_map);
+   colormap gray;
    
    
+   removed_exudate_map = remove_regions(img_h, img_w, potential_exudate_map, vec_img, vec_circle_pixels);
+   figure;
+   imagesc(removed_exudate_map);
+   colormap gray;
+   
+   
+   output_img = bitor(confirmed_exudate_map, removed_exudate_map);
+   figure;
+   imagesc(output_img);
+   colormap gray;
+end
+
+% http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2769953/#b21
+% http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=7095378
+
+
+
+
+
+% step 3: 
+
+
+
+
+
+
+
+
+% step 2: Find Exudates Using Median Filter
+function removed_exudate_map = remove_regions(img_h, img_w, potential_exudate_map, vec_img, vec_circle_pixels)
+    
+    vec_intensity_img = sum(vec_img,2);
+
+    vec_potential_exudate_map = reshape(potential_exudate_map, [img_h*img_w,1]);
+    all_connected_regions = bwconncomp(vec_potential_exudate_map);
+
+    connected_pixel_list = all_connected_regions.PixelIdxList;
+    
+    connected_pixel_length_list = cellfun('length', connected_pixel_list);
+    
+    % using 10 pixels instead of 5
+    filtered_connected_pixel_length_mask = (connected_pixel_length_list >= 10);
+    
+    filtered_connected_pixel_index = (filtered_connected_pixel_length_mask == 1);
+    filtered_connected_pixel_list = connected_pixel_list(1, filtered_connected_pixel_index);
+    
+    
+    img_map = get_uint8_img(img_h, img_w);
+    
+    
+    [temp, list_length] = size(filtered_connected_pixel_list);
+    
+    exudates_pixel_regions = cell(0);
+    
+    for i=1:list_length
+       
+        p_group = filtered_connected_pixel_list{1,i};
+        
+        
+        % checking the intensity
+        p_group_intensity = vec_intensity_img(p_group);
+        
+        filter_flag = (p_group_intensity < 60);
+        l = p_group_intensity(filter_flag);
+        
+        [m,n] = size(l);
+        if ( m >= 1)
+           continue;
+        end
+      
+        
+        % checking if it's in the optic disk
+        filter_flag = ismember(p_group, vec_circle_pixels);
+        if( all(filter_flag))
+            continue;
+        end
+        
+        i
+        
+        if(i==2360)
+           a = 1; 
+        end
+        
+        % check if it's near the boundary of the eye ball
+        [p_group_ys, p_group_xs] = ind2sub( [img_h, img_w], p_group );
+     
+        [mean_x, mean_y] = compute_region_center( p_group_xs, p_group_ys);
+        vec_boundary_pixels_idx = compute_window(mean_x, mean_y, img_h, img_w);
+        boundary_pixels = vec_intensity_img(vec_boundary_pixels_idx);
+        if( ~all(boundary_pixels))
+            continue;
+        end
+        
+        
+        
+        
+        [h, cur_idx] = size(exudates_pixel_regions);
+        exudates_pixel_regions{1,cur_idx+1} = p_group;
+        img_map(p_group) = 1;
+        %{
+        figure;
+        imagesc(img_map);
+        colormap gray;
+        %}
+    end
+    %{
+    figure;
+    imagesc(img_map);
+    colormap gray;
+    %}
+    removed_exudate_map = img_map;
 end
 
 
 
 
 
+function [cx, cy] = compute_region_center(xs, ys)
+    cx = round(mean(xs));
+    cy = round(mean(ys));
+
+end
+
+function vec_boundary_pixels_idx = compute_window(cx, cy, img_h, img_w)
+    window_width = 40;
+    
+    left = max(cx - window_width, 1);
+    right = min(cx + window_width, img_w);
+    top = max(cy - window_width, 1);
+    bot = min(cy + window_width, img_h);
+    
+    [window_xs, window_ys] = meshgrid( left:right, top:bot); 
+ 
+    linear_idx = sub2ind([img_h, img_w], window_ys, window_xs);
+    [m,n] = size(linear_idx);
+    linear_idx = reshape(linear_idx, [m*n,1]);
+    
+    vec_boundary_pixels_idx = linear_idx; 
+    
+end
 
 
-%{
-% step 2: Find Exudates Using Median Filter
-function compute_50_pixel_median_filter(h,w,img)
+function [hor_median, vert_median] = compute_50_pixel_median_filter(img_h, img_w, img)
+    
+    hor_median = zeros(img_h, img_w);
+    vert_median = zeros(img_h, img_w);
 
-    hor_median = zeros(h,1);
-    vert_median = zeros(1,w);
+    load('15138_left_hor_median.mat');
+    load('15138_left_vert_median.mat')
+
+  %{
+    img_int = sum(img,3);
+    
+    a=1;
+    hor_median = zeros(h,w);
+    vert_median = zeros(h,w);
 
     % along horizontal line
     for i=1:h
-        hor_pixels = double(img(i,:,:));
+        i
+        if(i>1700)
+            a = 1;
+        end
         
-        med = medfilt1(hor_pixels, 50);
-        int_med = sum(med,3);
-        hor_median(i,1) = med;
-    end
+        hor_pixels = double(img(i,:,:));
+        hor_pixels_int = sum(hor_pixels,3);
+        
+        med = medfilt1(hor_pixels_int, 50);
+        hor_median(i,:) = round(med);
+    end  
+    a = 1
     
-    a = 1;
+    
+ 
+    % along horizontal line
+    for i=1:w
+        i
+        vert_pixels = double(img(:,i,:));
+        vert_pixels_int = sum(vert_pixels,3);
+    
+        if(i>1200)
+            a = 1;
+        end
+        
+        med = medfilt1(vert_pixels_int, 50);
+        vert_median(:,i) = round(med);
+    end
     % along vertical
-end
+   
 %}
+
+end
+
+
+
+function subtracted_img = subtract_min_median(hor_median, vert_median, img)
+    img_int = sum(img,3);
+
+    min_median = min(hor_median, vert_median);
+
+    subtracted_img = abs(img_int - min_median);
+    
+    
+end
+
+
+
+
+function [potential_exudate_map, potential_exudate_ys, potential_exudate_xs] = get_potential_exodus_pixels(h, w, subtracted_img, threshold)
+
+  %  vec_potential_exodus_map = get_vec_uint8_img(h, w);
+    
+  %  vec_subtracted_img = reshape(subtracted_img, [h*w,1]);
+
+  %  vec_potential_exodus_map = (vec_subtracted_img >= threshold);
+    
+  %  potential_exodus_map = reshape(vec_potential_exodus_map, [h,w]);
+   
+    potential_exudate_map = (subtracted_img >= threshold);
+    [potential_exudate_ys, potential_exudate_xs] = find(subtracted_img >= threshold);
+  
+    figure;
+    imagesc(potential_exudate_map);
+  %  colormap gray
+    
+
+
+end
+
+
+%function confirmed_exudate_map = get_confirmed_exudate(h, w, potential_exudate_map, potential_exudate_ys, potential_exudate_xs, subtracted_img, vec_img)
+function confirmed_exudate_map = get_confirmed_exudate(h, w, subtracted_img, vec_img, vec_circle_pixels)
+    
+    confirmed_exudate_map = get_uint8_img(h,w);
+  
+    
+    
+  %  linear_ind = sub2ind([h,w], potential_exudate_ys, potential_exudate_xs);
+    
+    filtered_intensity_pixels = subtracted_img;
+    green_intensity_pixels = vec_img(:, 2);
+    green_intensity_pixels = reshape(green_intensity_pixels, [h,w]);
+    
+    filtered_intensity_map = (filtered_intensity_pixels > 30);
+    green_intensity_map = (green_intensity_pixels > 100);
+    
+    filtered_intensity_map(vec_circle_pixels) = 0;
+    green_intensity_map(vec_circle_pixels) = 0;
+    
+    result = filtered_intensity_map + green_intensity_map;
+    
+    [row, col] = find(result == 2);
+    
+    linear_ind = sub2ind([h,w], row, col);    
+    confirmed_exudate_map(linear_ind) = 1;
+    figure;
+    imagesc(confirmed_exudate_map);
+end
+
+
+
+
+
+
+
+function vec_uint8_img = get_vec_uint8_img(h, w)
+    temp = uint8(0);
+    vec_uint8_img(h*w, :) = temp;
+end
+
+
+function uint8_img = get_uint8_img(h, w)
+    temp = uint8(0);
+    uint8_img(h,w) = temp;
+end
+
+
+
+
+
 
 
 
@@ -119,7 +379,7 @@ end
 
 
 
-function compute_bounding_disc(h,w, p_list)
+function [center_x, center_y, radius, vec_circle_pixels]=compute_bounding_disc(h,w, p_list)
     
     [ys, xs] = ind2sub([h,w], p_list);
     
@@ -148,6 +408,18 @@ function compute_bounding_disc(h,w, p_list)
     plot( left_edge_mid_x, left_edge_mid_y, 'g.' ); 
     
     plot_circle(left_edge_mid_x, left_edge_mid_y, radius);
+    
+    
+    center_x = left_edge_mid_x; 
+    center_y = left_edge_mid_y;
+    
+    [img_c, img_r] = meshgrid(1:w, 1:h);
+    
+    circle_pixels = (img_r - center_y).^2 + (img_c - center_x).^2 <= radius.^2;
+    
+ %   [circle_pixel_ys, circle_pixel_xs] = find(circle_pixels == 1);
+    
+    vec_circle_pixels = find(circle_pixels == 1);
     
 end
 
