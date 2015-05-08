@@ -1,22 +1,25 @@
 function selected_pixels = confirm_exudates(im,exudates,x,y,radius)
     [h,w,~] = size(im);
     [cols, rows] = meshgrid(1:w, 1:h);
-    get_pixels_disk(x,y,radius,rows,cols);
+    disk_pixels = get_pixels_disk(x,y,radius,rows,cols);
+    %sub2ind(size(im),disk_pixels
+    disk_pts = [rows(disk_pixels) cols(disk_pixels)];
+    num_pts = size(disk_pts,1);
+    %im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),ones(num_pts,1))) = 0;
+    %im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),2*ones(num_pts,1))) = 0;
+    %im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),3*ones(num_pts,1))) = 0;
+    %figure,imshow(im);
     for i=1:size(exudates,2)
         curr_exudate = exudates{i};
         [ys, xs] = ind2sub([h,w], curr_exudate);
-        red_intensities = [];
-        green_intensities = [];
+        rg_ratios = [];
         %get red/green intensities
         for j=1:length(ys)
             curr_pixel = im(ys(j),xs(j),:);
-            red_intensities = [red_intensities curr_pixel(1)];
-            green_intensities = [green_intensities curr_pixel(2)];
+            rg_ratios = [rg_ratios curr_pixel(1)/curr_pixel(2)];
         end
-        I_green_low = prctile(green_intensities,5,2);
-        I_red_low = prctile(red_intensities,5,2);
-        I_green_high = prctile(green_intensities,95,2);
-        I_red_high = prctile(red_intensities,95,2);
+        I_rg_low = prctile(rg_ratios,5,2);
+        I_rg_high = prctile(rg_ratios,95,2);
         center_x = floor(mean(xs));
         center_y = floor(mean(ys));
         %get +-100 pixel neighborhood
@@ -42,7 +45,8 @@ function selected_pixels = confirm_exudates(im,exudates,x,y,radius)
             pixel_components = im(neighborhood(j,1),neighborhood(j,2),:);
             r_val = pixel_components(1);
             g_val = pixel_components(2);
-            if g_val >= I_green_low && g_val <= I_green_high && r_val >= I_red_low && r_val <= I_red_high
+            rg_ratio = r_val/g_val;
+            if rg_ratio >= I_rg_low && rg_ratio <= I_rg_high
                 selected_pixels = vertcat(selected_pixels,neighborhood(j,:));
             end
         end 
