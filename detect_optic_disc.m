@@ -1,4 +1,4 @@
-function exudate_cell_array = detect_optic_disc(img)
+function [confirmed_exudate_map, potential_exudate_cell_array] = detect_optic_disc(img)
     [h,w,d] = size(img);
     [img_h, img_w, img_d] = size(img);
     
@@ -119,17 +119,22 @@ function exudate_cell_array = detect_optic_disc(img)
    imagesc(removed_exudate_map);
    colormap gray;
    
-   
+   %{
    output_img = bitor(confirmed_exudate_map, removed_exudate_map);
    figure;
    imagesc(output_img);
    colormap gray;
+   %}
    
+ %  confirmed_exeduate_cell_array = confirmed_exudate_map;
+ 
+   potential_exudate_struct = bwconncomp(removed_exudate_map);
+   potential_exudate_cell_array = potential_exudate_struct.PixelIdxList;
    
-   
+   %{
    exudate_struct = bwconncomp(output_img); 
    exudate_cell_array  = exudate_struct.PixelIdxList;
-
+%}
 end
 
 % http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2769953/#b21
