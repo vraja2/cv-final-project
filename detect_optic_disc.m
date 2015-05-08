@@ -8,14 +8,32 @@ function exudate_cell_array = detect_optic_disc(img)
     
     
     
+
     % get rid of the blue hue around the ring eye balls
-    eye_ball_center_y = round(img_h/2);
-    eye_ball_center_y_pixels = img(eye_ball_center_y, :, 3);
-    eye_ball_center_y_pixels = sum(eye_ball_center_y_pixels, 3);
+    [eye_ball_center_x, eye_ball_center_y, eye_ball_radius, inner_eye_ball_radius, vec_ring_pixels] = find_eye_ball_center(img_w, img_h, img);
+
+ %   eye_ball_ring_width = 60;
+    
+    plot(eye_ball_center_x, eye_ball_center_y, 'g.');
+    plot_circle(eye_ball_center_x, eye_ball_center_y, eye_ball_radius);
+
+   %   inner_eye_ball_radius = eye_ball_radius - eye_ball_ring_width;
+    plot_circle(eye_ball_center_x, eye_ball_center_y, inner_eye_ball_radius);
+    
+    [ring_ys, ring_xs] = ind2sub([img_h, img_w], vec_ring_pixels);
+    plot( ring_xs, ring_ys, 'g.');
     
     
     
     
+    vec_img = reshape(img, [h*w,d]);
+    vec_img(vec_ring_pixels, :) = 0;
+    img = reshape(vec_img, [h,w,d]);
+    
+    %{
+    figure;
+    imagesc(img);
+    %}
     
     
     total_pixel_count = h*w;
@@ -86,7 +104,7 @@ function exudate_cell_array = detect_optic_disc(img)
    
   
    % step2
-   [hor_img_median, vert_img_median] = compute_50_pixel_median_filter(h,w,img);
+   [hor_img_median, vert_img_median] = compute_50_pixel_median_filter(img_h,img_w,img);
    subtracted_img = subtract_min_median(hor_img_median, vert_img_median, img);
    [potential_exudate_map, potential_exudate_ys, potential_exudate_xs] = get_potential_exodus_pixels(h,w,subtracted_img, 10);
    
@@ -249,10 +267,10 @@ function [hor_median, vert_median] = compute_50_pixel_median_filter(img_h, img_w
     hor_median = zeros(img_h, img_w);
     vert_median = zeros(img_h, img_w);
 
-    load('15138_left_hor_median.mat');
-    load('15138_left_vert_median.mat')
+%    load('15138_left_hor_median.mat');
+ %   load('15138_left_vert_median.mat')
 
-  %{
+  
     img_int = sum(img,3);
     
     a=1;
@@ -291,7 +309,7 @@ function [hor_median, vert_median] = compute_50_pixel_median_filter(img_h, img_w
     end
     % along vertical
    
-%}
+    a = 1;
 
 end
 
@@ -453,4 +471,83 @@ function plot_circle(x,y,r)
     h = plot(xunit, yunit, 'g.' ); 
 
 
+end
+
+
+function [eye_ball_center_x, eye_ball_center_y, eye_ball_radius, inner_eye_ball_radius, vec_ring_pixels] = find_eye_ball_center(img_w, img_h, img)
+
+
+    width = round(img_w/2);
+    eye_ball_center_y = round(img_h/2);
+    eye_ball_center_x_pixels = img(eye_ball_center_y, :, :);
+    eye_ball_center_x_pixels_int = sum(eye_ball_center_x_pixels, 3);
+    eye_ball_center_x_pixels_b = img(eye_ball_center_y, :, 3);
+
+    int_threshold = 60;
+%{    
+    r_threshold = 40;
+    g_threshold = 30;
+    b_threshold = 20;
+   
+    eye_ball_left_edge = find(eye_ball_center_x_pixels_b >= b_threshold, 1, 'first');
+    eye_ball_right_edge = find(eye_ball_center_x_pixels_b >= b_threshold, 1, 'last');    
+  %}  
+    
+    eye_ball_left_edge = find(eye_ball_center_x_pixels_int >= int_threshold, 1, 'first');
+    eye_ball_right_edge = find(eye_ball_center_x_pixels_int >= int_threshold, 1, 'last');
+    
+    eye_ball_left_edge_intensity = eye_ball_center_x_pixels(1,eye_ball_left_edge,:);
+    eye_ball_right_edge_intensity = eye_ball_center_x_pixels(1,eye_ball_right_edge,:);
+ %{
+   eye_ball_edge_intensity = max(eye_ball_left_edge_intensity, eye_ball_right_edge_intensity);
+%}
+    
+    %{
+    eye_ball_left_edge = eye_ball_center_x_pixels(1,1:img_w/2);
+    eye_ball_right_edge = eye_ball_center_x_pixels(1,img_w/2:end);
+    
+    eye_ball_left_edge = find(eye_ball_left_edge >= 20, 1, 'last');
+    eye_ball_right_edge = find(eye_ball_right_edge >= 20, 1, 'first') + width;    
+%}
+    
+    % 16_left  left_edge  12,15,20
+    % 16_left  right_edge 15,19,20
+
+    % 15138_left    left_edge 82 52 26
+    % 15138_left    right_edge 38 30 20
+    
+    eye_ball_center_x = round( mean([eye_ball_left_edge, eye_ball_right_edge]));
+    
+    eye_ball_radius = eye_ball_center_x - eye_ball_left_edge;
+    
+    red_color = double(eye_ball_left_edge_intensity(1,1,1));
+    green_color = double(eye_ball_left_edge_intensity(1,1,2));
+    blue_color = double(eye_ball_left_edge_intensity(1,1,3));
+    
+    rgb_diff = abs(red_color + green_color - blue_color);
+    if(rgb_diff == 0)
+       rgb_diff = 1; 
+    end
+    
+    eye_ball_ring_width = round(2000/rgb_diff);
+    inner_eye_ball_radius = eye_ball_radius - eye_ball_ring_width;
+
+
+    vec_circle_pixels = get_circle_pixel_list(img_h, img_w, eye_ball_center_x, eye_ball_center_y, eye_ball_radius);
+    vec_inner_circle_pixels = get_circle_pixel_list(img_h, img_w, eye_ball_center_x, eye_ball_center_y, inner_eye_ball_radius);
+
+    vec_ring_pixels = setdiff(vec_circle_pixels, vec_inner_circle_pixels);
+    
+
+    
+  %  plot( ring_xs, ring_ys, 'g.');
+end
+
+
+
+function vec_circle_pixels = get_circle_pixel_list(img_h, img_w, center_x, center_y, radius)
+
+    [img_c, img_r] = meshgrid(1:img_w, 1:img_h);
+    circle_pixels = (img_r - center_y).^2 + (img_c - center_x).^2 <= radius.^2;
+    vec_circle_pixels = find(circle_pixels == 1);
 end
