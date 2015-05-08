@@ -1,6 +1,21 @@
-function detect_optic_disc(img)
+function exudate_cell_array = detect_optic_disc(img)
     [h,w,d] = size(img);
     [img_h, img_w, img_d] = size(img);
+    
+    figure;
+    imagesc(img);
+    hold on;
+    
+    
+    
+    % get rid of the blue hue around the ring eye balls
+    eye_ball_center_y = round(img_h/2);
+    eye_ball_center_y_pixels = img(eye_ball_center_y, :, 3);
+    eye_ball_center_y_pixels = sum(eye_ball_center_y_pixels, 3);
+    
+    
+    
+    
     
     
     total_pixel_count = h*w;
@@ -91,6 +106,12 @@ function detect_optic_disc(img)
    figure;
    imagesc(output_img);
    colormap gray;
+   
+   
+   
+   exudate_struct = bwconncomp(output_img); 
+   exudate_cell_array  = exudate_struct.PixelIdxList;
+
 end
 
 % http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2769953/#b21
@@ -235,11 +256,11 @@ function [hor_median, vert_median] = compute_50_pixel_median_filter(img_h, img_w
     img_int = sum(img,3);
     
     a=1;
-    hor_median = zeros(h,w);
-    vert_median = zeros(h,w);
+    hor_median = zeros(img_h,img_w);
+    vert_median = zeros(img_h,img_w);
 
     % along horizontal line
-    for i=1:h
+    for i=1:img_h
         i
         if(i>1700)
             a = 1;
@@ -256,7 +277,7 @@ function [hor_median, vert_median] = compute_50_pixel_median_filter(img_h, img_w
     
  
     % along horizontal line
-    for i=1:w
+    for i=1:img_w
         i
         vert_pixels = double(img(:,i,:));
         vert_pixels_int = sum(vert_pixels,3);
