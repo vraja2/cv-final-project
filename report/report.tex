@@ -68,30 +68,17 @@ For ideas about some domain-dependent features, we referred to a paper titled ``
 However, an important point to note regarding Hann's work is that he does not categorize images into classes using exudate and hemorrhage features. Instead, he evaluates his identification methods by computing Positive Predictive Value (PPV) and Negative Predictive Value (NPV) scores where a human manually counts the number of exudate regions and dot hemorrhages and these values are compared with the output of the identification algorithm. The PPV and NPV results were very good for both exudate (PPV: 97\%, NPV: 95\%) and hemorrhage (PPV: 96\%, NPV: 100\%) identification tasks. \\ \\
 In our work, we utilize these identification methods to build a multiclass classifier. We also attempt to perform classification using generalized approaches such as color histograms and SIFT feature vectors.
 
-\section{General formatting instructions}
-\label{gen_inst}
+\section{Generalized Approaches}
 
-The text must be confined within a rectangle 5.5~inches (33~picas) wide and
-9~inches (54~picas) long. The left margin is 1.5~inch (9~picas).
-Use 10~point type with a vertical spacing of 11~points. Times New Roman is the
-preferred typeface throughout. Paragraphs are separated by 1/2~line space,
-with no indentation.
+\subsection{Color Histograms}
 
-Paper title is 17~point, initial caps/lower case, bold, centered between
-2~horizontal rules. Top rule is 4~points thick and bottom rule is 1~point
-thick. Allow 1/4~inch space above and below title to rules. All pages should
-start at 1~inch (6~picas) from the top of the page.
+\subsection{Histograms using SIFT Feature Vectors}
 
-%The version of the paper submitted for review should have ``Anonymous Author(s)'' as the author of the paper.
-
-For the final version, authors' names are
-set in boldface, and each name is centered above the corresponding
-address. The lead author's name is to be listed first (left-most), and
-the co-authors' names (if different address) are set to follow. If
-there is only one co-author, list both author and co-author side by side.
-
-Please pay special attention to the instructions in section \ref{others}
-regarding figures, tables, acknowledgments, and references.
+Scale-invariant feature transform (SIFT) is a computer vision technique to describe local features and keypoints in images. It is often used in feature tracking and object recognition. We felt that SIFT features could potentially be a useful method of describing eye images and that local eye characteristics would be represented as keypoints in the SIFT feature vectors. For this project, we used $128 \times 1$ dimensional feature vectors.\\ \\
+Our method of using SIFT features is as follows. Because we have 35,126 high resolution eye images in total and using all of these images for training is intractable on our local machines, we cut down our dataset to 1,500 images. We first use VLFeat's SIFT library to generate SIFT feature vectors for each image. This process took around 10 hours on our local machines due to the very high resolution of the images. Since the number of SIFT vectors per image is also initially very large, we randomly select $n=10,20,30,40,50,60,70,$ and $80$ SIFT vectors per image. Next, with $n$ SIFT vectors per image, we constructed a $128 \times (1,500 \times n)$ SIFT matrix. \\ \\
+Our next step is to initialize $K=100$ means from this SIFT matrix. We randomly select $100$ vectors from the SIFT matrix and execute $100$ iterations of the K-means clustering algorithm to converge on a final $128 \times 100$ set of means. \\ \\
+Next, for each image, we construct a histogram where each bin is a mean and the frequencies for each mean are the number of times that a SIFT vector for the image is closest to that mean. Thus, every image's histogram has $100$ bins. These histograms are created for both training and testing images.\\ \\
+With these histograms we now construct a classifier. We try two different classification methods. Our first method is to use a nearest neighbor search with Euclidean distance. Thus, for a test histogram, we simply find the training histogram that has the shortest Euclidean distance to it and assign it the training image's label. Our second method is to train a multiclass SVM using the training histograms as feature vectors and their respective labels. 
 
 \section{Headings: first level}
 \label{headings}
