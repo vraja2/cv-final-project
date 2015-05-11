@@ -64,7 +64,7 @@ The problem we want to solve is as follows. Given an input image of an eye, we w
 	\subfigure[Label 3]{\label{fig:a}\includegraphics[height=1.3in,width=1.6in]{./images/19367_left.jpeg}}
 	\subfigure[Label 4]{\label{fig:a}\includegraphics[height=1.3in,width=1.6in]{./images/1084_left.jpeg}}
 \end{figure} 
-For ideas about some domain-dependent features, we referred to a paper titled ``Screening for Diabetic Retinopathy Using Computer Vision and Physiological Markers'' which was written by Christoper E. Hann and colleagues. In this paper, Hann describes methods of detecting exudates and dot hemorrhages; both of these conditions aid in characterizing the severity of the disease. \\ \\
+For ideas about some domain-dependent features, we referred to a paper titled ``Screening for Diabetic Retinopathy Using Computer Vision and Physiological Markers'' \cite{hann2009} which was written by Christoper E. Hann and colleagues. In this paper, Hann describes methods of detecting exudates and dot hemorrhages; both of these conditions aid in characterizing the severity of the disease. \\ \\
 However, an important point to note regarding Hann's work is that he does not categorize images into classes using exudate and hemorrhage features. Instead, he evaluates his identification methods by computing Positive Predictive Value (PPV) and Negative Predictive Value (NPV) scores where a human manually counts the number of exudate regions and dot hemorrhages and these values are compared with the output of the identification algorithm. The PPV and NPV results were very good for both exudate (PPV: 97\%, NPV: 95\%) and hemorrhage (PPV: 96\%, NPV: 100\%) identification tasks. \\ \\
 In our work, we utilize these identification methods to build a multiclass classifier. We also attempt to perform classification using generalized approaches such as color histograms and SIFT feature vectors.
 
@@ -92,7 +92,23 @@ Using nearest-neighbor search with the same parameters except $n=40$, our result
 Orientation & Average accuracy across 10 folds \\ \hline
 Left & 19.65\% \\ \hline
 Right & 18.42\% \\ \hline
-\end{tabular} 
+\end{tabular}  \\ \\
+To do futher analysis on why SIFT didn't yield good results, we display SIFT descriptors for each image class. 
+
+\begin{figure*}[htp]
+  \centering
+  \subfigure[Label 0]{\includegraphics[height=1.3in,width=1.6in]{./images/l0sift.png}
+}\quad
+  \subfigure[Label 1]{\includegraphics[height=1.3in,width=1.6in]{./images/l1sift.png}
+  }\quad
+  \subfigure[Label 2]{\includegraphics[height=1.3in,width=1.6in]{./images/l2sift.png}
+  }\quad
+  \subfigure[Label 3]{\includegraphics[height=1.3in,width=1.6in]{./images/l3sift.png}
+  }\quad
+  \subfigure[Label 4]{\includegraphics[height=1.3in,width=1.6in]{./images/l4sift.png}
+  }\quad
+\end{figure*}
+The keypoints selected aren't distinctive, often missing exudates and hemorrhages completely. Poor keypoint selection is the primary reason for this method's poor performance. 
 
 \section{Domain-dependent Approaches}
 \subsection{Detecting Exudates}
@@ -112,20 +128,12 @@ Finally, he extracts the top 7\% of filtered intensities from $p_{filtered}$. Ha
   \subfigure[Filtered R/G intensities]{\includegraphics[height=1.3in,width=1.6in]{./images/dh_2804left.png}}
 \end{figure*}
 
-\small{
-[1] Alexander, J.A. \& Mozer, M.C. (1995) Template-based algorithms
-for connectionist rule extraction. In G. Tesauro, D. S. Touretzky
-and T.K. Leen (eds.), {\it Advances in Neural Information Processing
-Systems 7}, pp. 609-616. Cambridge, MA: MIT Press.
+\begin{thebibliography}{9}
+\bibitem{hann2009}
+Hann, C.E. \& Revie, J.A. \& Hewett, D. \& Chase, J.G. \& Shaw, G.M.
+(2009) Screening for Diabetic Retinopathy Using Computer Vision and Physiological Markers. 
+{\it Journal of Diabetes Science and Technology}
+\end{thebibliography}
 
-[2] Bower, J.M. \& Beeman, D. (1995) {\it The Book of GENESIS: Exploring
-Realistic Neural Models with the GEneral NEural SImulation System.}
-New York: TELOS/Springer-Verlag.
-
-[3] Hasselmo, M.E., Schnell, E. \& Barkai, E. (1995) Dynamics of learning
-and recall at excitatory recurrent synapses and cholinergic modulation
-in rat hippocampal region CA3. {\it Journal of Neuroscience}
-{\bf 15}(7):5249-5262.
-}
 
 \end{document}
