@@ -72,6 +72,33 @@ In our work, we utilize these identification methods in a different way to build
 
 \subsection{Color Histograms}
 
+We first attempt classify images using color histograms. For each image, we compute 16 bin histograms for each patch in our 3-level spatial pyramid. We have 1 histogram for the first level, 4 for the second, and 16 for the third giving us 21 total histograms. We put concatenate these histograms into a single $(21 \times 16) \times 1$ feature vector for the image. We then experiment with both histogram intersection and nearest-neighbor Euclidean distance scoring schemes. We use 10 fold cross validation in evaluation. Our results are below.
+
+\begin{tabular}{| l | l | l |}
+\hline
+Eye side & Grading Scheme & Average accuracy across 10 folds \\ \hline
+Left & Histogram Intersection & 17.2\% \\ \hline
+Left & Nearest-Neighbor & 22.8\% \\ \hline
+Right & Histogram Intersection & 18.6\% \\ \hline
+Right & Nearest-Neighbor & 21.7\% \\ \hline
+\end{tabular} 
+
+We observe that color histograms do not yield good results. We suspect that because the color variance is large and each class doesn't have a distinctive color to aid in classification, the performance is consequently poor. The color variance is affected by the different lighting schemes in each image as well as the varying natural eye colors. Below we show images that are all labeled 0, but show drastically different lighting and colors.
+
+\begin{figure*}[htp]
+  \centering
+  \subfigure[Label 0]{\includegraphics[height=1.3in,width=1.6in]{./images/l0sift.png}
+}\quad
+  \subfigure[Label 1]{\includegraphics[height=1.3in,width=1.6in]{./images/l1sift.png}
+  }\quad
+  \subfigure[Label 2]{\includegraphics[height=1.3in,width=1.6in]{./images/l2sift.png}
+  }\quad
+  \subfigure[Label 3]{\includegraphics[height=1.3in,width=1.6in]{./images/l3sift.png}
+  }\quad
+  \subfigure[Label 4]{\includegraphics[height=1.3in,width=1.6in]{./images/l4sift.png}
+  }\quad
+\end{figure*}
+
 \subsection{Histograms using SIFT Feature Vectors}
 
 Scale-invariant feature transform (SIFT) is a computer vision technique to describe local features and keypoints in images. It is often used in feature tracking and object recognition. We feel that SIFT features can potentially be a useful method of describing eye images and that local eye characteristics will be represented as keypoints in the SIFT feature vectors. For this project, we use $128 \times 1$ dimensional feature vectors.\\ \\
