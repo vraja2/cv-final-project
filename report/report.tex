@@ -45,13 +45,13 @@ Urbana, IL 61801 \\
 \maketitle
 
 \begin{abstract}
-This paper describes some generalized and domain-dependent approaches to automatically detect the severity of diabetic retionapthy (DR) in input eye images. Our generalized approaches include classification with color histograms and SIFT feature vectors, while our domain-dependent solutions attempted to detect specific characteristics of the disease such as exudates and dot hemorrhages using computer vision techniques. Our performance using these techniques ended up being low due to a high variance in the color spectrum of the dataset of eye images.
+This paper describes some generalized and domain-dependent approaches to automatically detect the severity of diabetic retionapthy (DR) in input eye images. Our generalized approaches include classification with color histograms and SIFT feature vectors, while our domain-dependent solutions attempted to detect specific characteristics of the disease such as exudates and dot hemorrhages using computer vision techniques. Using SIFT features, we achieved an accuracy of 26.15\% on left eyes and 28.88\% on right eyes.%TODO: add results of histogram and exudate classification
 \end{abstract}
 
 \section{Introduction}
 
-Diabetic retinopathy affects over 93 million people in the world and is a consequence of diabetes and around 40-45\% of Americans who have diabetes suffer from the disease. This disease is serious because it can eventually lead to blindness. However, if the disease is detected at an early enough stage, impairment may be prevented. \\ \\
-The current process for identifying cases of diabetic retinopathy is tedious and slow because a trained clinician needs to manually analyze images of the patient’s retina and oftentimes the process of getting the results to the patient are also slow. Thus, an automated system can make this process far more efficient and will improve the lives of those afflicted. \\ \\
+Diabetic retinopathy affects over 93 million people in the world and is a consequence of diabetes. Around 40-45\% of Americans who have diabetes suffer from the disease. This disease is serious because it can eventually lead to full blindness. However, if the disease is detected at an early enough stage, impairment may be prevented. \\ \\
+The current process for identifying cases of diabetic retinopathy is tedious and slow because a trained clinician needs to manually analyze images of the patient's retina and oftentimes the process of getting the results to the patient are also slow. Thus, an automated system can make this process far more efficient and will improve the lives of those afflicted. \\ \\
 The problem we want to solve is as follows. Given an input image of an eye, we want to categorize it into one of 5 categories: 0 - No DR, 1 - Mild, 2 - Moderate, 3 - Severe, and 4 - Proliferative DR. Below are some eye images of each of the classes.
 \begin{figure}[H]
 	\centering
@@ -64,9 +64,9 @@ The problem we want to solve is as follows. Given an input image of an eye, we w
 	\subfigure[Label 3]{\label{fig:a}\includegraphics[height=1.3in,width=1.6in]{./images/19367_left.jpeg}}
 	\subfigure[Label 4]{\label{fig:a}\includegraphics[height=1.3in,width=1.6in]{./images/1084_left.jpeg}}
 \end{figure} 
-For ideas about some domain-dependent features, we referred to a paper titled ``Screening for Diabetic Retinopathy Using Computer Vision and Physiological Markers'' \cite{hann2009} which was written by Christoper E. Hann and colleagues. In this paper, Hann describes methods of detecting exudates and dot hemorrhages; both of these conditions aid in characterizing the severity of the disease. \\ \\
+For ideas about some domain-dependent features, we referred to a paper titled ``Screening for Diabetic Retinopathy Using Computer Vision and Physiological Markers'' \cite{hann2009} which was written by Christoper E. Hann and colleagues. In this paper, Hann describes methods of detecting exudates, which are defined as leakages of lipids from vessels in the eye, and dot hemorrhages, which are small ruptures in the deep layers of the retina; both of these conditions aid in characterizing the severity of the disease. \\ \\
 However, an important point to note regarding Hann's work is that he does not categorize images into classes using exudate and hemorrhage features. Instead, he evaluates his identification methods by computing Positive Predictive Value (PPV) and Negative Predictive Value (NPV) scores where a human manually counts the number of exudate regions and dot hemorrhages and these values are compared with the output of the identification algorithm. The PPV and NPV results were very good for both exudate (PPV: 97\%, NPV: 95\%) and hemorrhage (PPV: 96\%, NPV: 100\%) identification tasks. \\ \\
-In our work, we utilize these identification methods to build a multiclass classifier. We also attempt to perform classification using generalized approaches such as color histograms and SIFT feature vectors.
+In our work, we utilize these identification methods in a different way to build a multiclass classifier. We also attempt to perform classification using generalized approaches such as color histograms and SIFT feature vectors.
 
 \section{Generalized Approaches}
 
@@ -74,7 +74,7 @@ In our work, we utilize these identification methods to build a multiclass class
 
 \subsection{Histograms using SIFT Feature Vectors}
 
-Scale-invariant feature transform (SIFT) is a computer vision technique to describe local features and keypoints in images. It is often used in feature tracking and object recognition. We felt that SIFT features could potentially be a useful method of describing eye images and that local eye characteristics would be represented as keypoints in the SIFT feature vectors. For this project, we used $128 \times 1$ dimensional feature vectors.\\ \\
+Scale-invariant feature transform (SIFT) is a computer vision technique to describe local features and keypoints in images. It is often used in feature tracking and object recognition. We feel that SIFT features can potentially be a useful method of describing eye images and that local eye characteristics will be represented as keypoints in the SIFT feature vectors. For this project, we use $128 \times 1$ dimensional feature vectors.\\ \\
 Our method of using SIFT features is as follows. Because we have 35,126 high resolution eye images in total and using all of these images for training is intractable on our local machines, we cut down our dataset to 1,500 images. We first use VLFeat's SIFT library to generate SIFT feature vectors for each image. This process took around 10 hours on our local machines due to the very high resolution of the images. Since the number of SIFT vectors per image is also initially very large, we randomly select $n=20$ SIFT vectors per image. Next, with $n$ SIFT vectors per image, we construct a $128 \times (1,500 \times n)$ SIFT matrix. \\ \\
 Our next step is to initialize $K=100$ means from this SIFT matrix. We randomly select $100$ vectors from the SIFT matrix and execute $100$ iterations of the K-means clustering algorithm to converge on a final $128 \times 100$ set of means. \\ \\
 Next, for each image, we construct a histogram where each bin is a mean and the frequencies for each mean are the number of times that a SIFT vector for the image is closest to that mean. Thus, every image's histogram has $100$ bins. These histograms are created for both training and testing images.\\ \\
@@ -82,14 +82,14 @@ With these histograms we now construct a classifier. We try two different classi
 The training images we use have both left and right eye orientations. In our evaluation, we decided to train and test exclusively on either left or right images. Using a multiclass SVM, $K=100$, and $n=20$ with 10-fold cross validation our results are: \\ \\
 \begin{tabular}{| l | l |}
 \hline
-Orientation & Average accuracy across 10 folds \\ \hline
+Eye side & Average accuracy across 10 folds \\ \hline
 Left & 26.15\% \\ \hline
 Right & 28.88\% \\ \hline
 \end{tabular} \\ \\
 Using nearest-neighbor search with the same parameters except $n=40$, our results are: \\ \\
 \begin{tabular}{| l | l |}
 \hline
-Orientation & Average accuracy across 10 folds \\ \hline
+Eye side & Average accuracy across 10 folds \\ \hline
 Left & 19.65\% \\ \hline
 Right & 18.42\% \\ \hline
 \end{tabular}  \\ \\
@@ -117,9 +117,9 @@ Another result of DR are hemorrhages which are caused by ruptured capillaries an
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.3]{./images/dh.jpg}}
 \end{figure}
-In the above image, the hemorrhage is a small, dark red dot. We followed the approach of Hann where he first computes the intensity ratios of the red and green channels of each pixel in the image. Next, he applies horizontal and vertical length 50 median filters to the image resulting in two median maps. From each original pixel, he then subtracts the minimum value of the maps at the pixel location. Thus, we have \\ \\
+In the above image, the hemorrhage is a small, dark red dot. We followed the approach of Hann where he first computes the intensity ratios of the red and green channels of each pixel in the image. We then apply horizontal and vertical length 50 median filters to the image which results in two median maps. From each original pixel, we then subtract the minimum value of the maps at the pixel location. Thus, we have \\ \\
 $p_{filtered} = p_{original} - min(p_{median_x},p_{median_y})$ \\ \\
-Finally, he extracts the top 7\% of filtered intensities from $p_{filtered}$. Hann goes on to filter out blood vessels and other non-hemorrhage regions from this filtered intensity map using shape analysis. However, when we performed the initial detection steps using R/G intensities, we found that there was too much noise to be filtered. The images used in Hann's experiment were consistent in color which allowed for hemorrhages to be reliably detected, while minimizing extraneous noise. Our training images exhibit high color variance and oftentimes eye images are bright red which results in too much noise to filter out with shape analysis. We decided not to pursue this feature further, but in the future we hope to use histogram normalization as a solution. Below is an example of our noisy filtered R/G intensity map.
+Finally, we extract the top 7\% of filtered intensities from $p_{filtered}$. Hann goes on to filter out blood vessels and other non-hemorrhage regions from this filtered intensity map using shape analysis. However, when we performed the initial detection steps using R/G intensities, we found that there was too much noise to be filtered. The images used in Hann's experiment were consistent in color which allowed for hemorrhages to be reliably detected, while minimizing extraneous noise. Our training images exhibit high color variance and oftentimes eye images are bright red which results in too much noise to filter out with shape analysis. We decided not to pursue this feature further, but in the future we hope to use histogram normalization as a solution. Below is an example of our noisy filtered R/G intensity map. Small hemorrhages are detected, but there are also many other circular connected regions.
 
 \begin{figure*}[htp]
   \centering
