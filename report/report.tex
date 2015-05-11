@@ -72,6 +72,35 @@ In our work, we utilize these identification methods in a different way to build
 
 \subsection{Color Histograms}
 
+We first attempted classifying images using color histograms. Continuing our efforts from MP5, we first computed 16 bins histograms for images split in 3 levels. We then experimented with both histogram intersection and nearest Euclidean distance grading schemes. Since we were not given labels for the test samples, 10 fold cross validation was used. Results are below:
+
+\begin{tabular}{| l | l | l |}
+\hline
+Eye side & Grading Scheme & Average accuracy across 10 folds \\ \hline
+Left & Histogram Intersection & 17.2\% \\ \hline
+ & Nearest Neighbor & 22.8\% \\ \hline
+Right & Histogram Intersection & 18.6\% \\ \hline
+ & Nearest Neighbor & 21.7\% \\ \hline
+\end{tabular} \\ \\
+\\ \\
+\begin{figure*}[htp]
+\centering
+\subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Exudates_Description/0.jpeg}
+}
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Exudates_Description/1.jpeg}
+}
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Exudates_Description/2.jpeg}
+}
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Exudates_Description/3.jpeg}
+}
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Exudates_Description/4.jpeg}
+}
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Exudates_Description/5.jpeg}
+}
+\end{figure*} 
+
+It can be seen that color histograms does not yield good results. One reason we suspected that is because the color variance is very large. Therefore each class does not have its distinctive color that is efficient for classification. This is partially affected by the lighting of the eyeball pictures, as well as the innate colors of the eyeballs. Figure 1 shows a group of image, all labeled 0, yet showing drastically different lighting and colors.  
+
 \subsection{Histograms using SIFT Feature Vectors}
 
 Scale-invariant feature transform (SIFT) is a computer vision technique to describe local features and keypoints in images. It is often used in feature tracking and object recognition. We feel that SIFT features can potentially be a useful method of describing eye images and that local eye characteristics will be represented as keypoints in the SIFT feature vectors. For this project, we use $128 \times 1$ dimensional feature vectors.\\ \\
