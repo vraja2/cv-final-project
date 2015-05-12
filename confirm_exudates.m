@@ -5,11 +5,12 @@ function selected_pixels = confirm_exudates(im,exudates,x,y,radius)
     %sub2ind(size(im),disk_pixels
     disk_pts = [rows(disk_pixels) cols(disk_pixels)];
     num_pts = size(disk_pts,1);
-    %im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),ones(num_pts,1))) = 0;
-    %im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),2*ones(num_pts,1))) = 0;
-    %im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),3*ones(num_pts,1))) = 0;
+    im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),ones(num_pts,1))) = 0;
+    im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),2*ones(num_pts,1))) = 0;
+    im(sub2ind(size(im),disk_pts(:,1),disk_pts(:,2),3*ones(num_pts,1))) = 0;
     %figure,imshow(im);
     for i=1:size(exudates,2)
+        i
         curr_exudate = exudates{i};
         [ys, xs] = ind2sub([h,w], curr_exudate);
         rg_ratios = [];
@@ -30,17 +31,24 @@ function selected_pixels = confirm_exudates(im,exudates,x,y,radius)
         [X,Y] = meshgrid(lb:rb,tb:bb);
         X = X(:);
         Y = Y(:);
-        neighborhood = [];
+        %neighborhood = [];
         points = [Y X];
+        neighborhood = points;
+        %{
+        tic
         for j=1:size(points,1)
             if ~ismember(points(j,:),[ys xs],'rows')
                 %unique neighbors
                 neighborhood = vertcat(neighborhood,points(j,:));
             end
         end
+        toc
+        %}
         %go through each neighbor and check whether it's RG components like
         %within the range
         selected_pixels = [];
+        tic
+        
         for j=1:size(neighborhood,1)
             pixel_components = im(neighborhood(j,1),neighborhood(j,2),:);
             r_val = pixel_components(1);
@@ -50,6 +58,7 @@ function selected_pixels = confirm_exudates(im,exudates,x,y,radius)
                 selected_pixels = vertcat(selected_pixels,neighborhood(j,:));
             end
         end 
+        toc
     end
 end
 
