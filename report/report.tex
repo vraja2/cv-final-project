@@ -72,7 +72,7 @@ In our work, we utilize these identification methods in a different way to build
 
 \subsection{Color Histograms}
 
-We first attempt classify images using color histograms. For each image, we compute 16 bin histograms for each patch in our 3-level spatial pyramid. We have 1 histogram for the first level, 4 for the second, and 16 for the third giving us 21 total histograms. We put concatenate these histograms into a single $(21 \times 16) \times 1$ feature vector for the image. We then experiment with both histogram intersection and nearest-neighbor Euclidean distance scoring schemes. We use 10 fold cross validation in evaluation. Our results are below.
+We first attempt to classify images using color histograms. For each image, we compute 16 bin histograms for each patch in our 3-level spatial pyramid. We have 1 histogram for the first level, 4 for the second, and 16 for the third giving us 21 total histograms. We concatenate these histograms into a single $(21 \times 16) \times 1$ feature vector for the image. We then experiment with both histogram intersection and nearest-neighbor Euclidean distance scoring schemes. We use 10 fold cross validation in evaluation. Our results are below.
 
 \begin{tabular}{| l | l | l |}
 \hline
@@ -83,20 +83,25 @@ Right & Histogram Intersection & 18.6\% \\ \hline
 Right & Nearest-Neighbor & 21.7\% \\ \hline
 \end{tabular} 
 
-We observe that color histograms do not yield good results. We suspect that because the color variance is large and each class doesn't have a distinctive color to aid in classification, the performance is consequently poor. The color variance is affected by the different lighting schemes in each image as well as the varying natural eye colors. Below we show images that are all labeled 0, but show drastically different lighting and colors.
+We observe that color histograms do not yield good results. We suspect that because the color variance is large and each class does not have a distinctive color to aid in classification, the performance is consequently poor. The color variance is affected by the different lighting schemes in each image as well as the varying natural eye colors. Below we show images that are all labeled 0, but have drastically different lighting and colors.
 
-\begin{figure*}[htp]
+\newpage
+
+\begin{figure*}[!htp]
   \centering
-  \subfigure[Label 0]{\includegraphics[height=1.3in,width=1.6in]{./images/l0sift.png}
-}\quad
-  \subfigure[Label 1]{\includegraphics[height=1.3in,width=1.6in]{./images/l1sift.png}
-  }\quad
-  \subfigure[Label 2]{\includegraphics[height=1.3in,width=1.6in]{./images/l2sift.png}
-  }\quad
-  \subfigure[Label 3]{\includegraphics[height=1.3in,width=1.6in]{./images/l3sift.png}
-  }\quad
-  \subfigure[Label 4]{\includegraphics[height=1.3in,width=1.6in]{./images/l4sift.png}
-  }\quad
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Color_Histogram/318_left.jpeg}
+}
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Color_Histogram/72_left.jpeg}
+  }
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Color_Histogram/73_left.jpeg}
+  }
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Color_Histogram/10_left.jpeg}
+  }
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Color_Histogram/13_left.jpeg}
+  }
+  \subfigure{\includegraphics[height=1.3in,width=1.6in]{./images/Color_Histogram/258_left.jpeg}
+  }
+  \caption{Class 0 images in different lighting conditions}
 \end{figure*}
 
 \subsection{Histograms using SIFT Feature Vectors}
@@ -138,7 +143,6 @@ To do futher analysis on why SIFT didn't yield good results, we display SIFT des
 The keypoints selected aren't distinctive, often missing exudates and hemorrhages completely. Poor keypoint selection is the primary reason for this method's poor performance. 
 
 \section{Domain-dependent Approaches}
-\subsection{Detecting Exudates}
 \subsection{Detecting Dot Hemorrhages}
 Another result of DR are hemorrhages which are caused by ruptured capillaries and veins. Thus, detecting hemorrhages is useful in determining the severity of DR in a patient image. Below is an example image of dot hemorrhages which was included in Hann's paper.
 \begin{figure}[H]
@@ -154,6 +158,32 @@ Finally, we extract the top 7\% of filtered intensities from $p_{filtered}$. Han
 }\quad
   \subfigure[Filtered R/G intensities]{\includegraphics[height=1.3in,width=1.6in]{./images/dh_2804left.png}}
 \end{figure*}
+
+\subsection{Detecting Exudates}
+Our method of detecting exudates is based on Hann's approach. Exudates often appear as small, bright yellow regions. However, the optic disk is also a bright yellow region. We first identify the optic disk by searching for pixels with large green intensities. More specifically, we obtain the pixels that fall in the top 5\% of green intensities. Our rationale for doing this is because yellow is produced by a combination of large green and red intensities. We then find the largest connected region amongst the selected pixels. Finally, we bound the optic disk with a circle of larger radius and remove all pixels within this circle from consideration when trying to find exudate regions. Below is a visual description of exudates and the optic disk from Hann's paper as well as the results of our optic disc detector.
+
+\begin{figure*}[htp]
+  \centering
+  \subfigure[Exudate and Optic Disc]{\includegraphics[height=1.5in,width=1.8in]{./images/exudate_odisk.jpg}
+}\quad
+  \subfigure[Optic Disc detected]{\includegraphics[height=1.5in,width=1.8in]{./images/Exudates_Description/highlight_optic_disc.png}}
+\end{figure*}
+
+Realizing that exudate regions correspond to abrupt jumps in color intensities, we apply the aforementioned median filtering methods to obtain a filtered intensity map. We now further examine filtered pixels by selecting those pixels with a filtered value larger than 30. From this new set of pixels, we filter further by selecting those pixels with a green intensity greater than 100. Finally, we filter out pixels that do not belong to a connected component of at least 15 pixels. Below we present the input image and the resultant binary map where exudates are marked white.
+
+\begin{figure*}[htp]
+  \centering
+  \subfigure[Input Image]{\includegraphics[height=1.5in,width=1.8in]{./images/input_exudate.png}
+}\quad
+  \subfigure[Output Exudate Map]{\includegraphics[height=1.5in,width=1.8in]{./images/output_exudate.png}
+}
+\end{figure*}
+
+To classify images, we build a multiclass SVM where the feature for an image is the number of exudate pixels. Using 10-fold cross validation we are able to achieve an accuracy of 30.9\%.
+
+\subsubsection{Light Normalization}
+Another challenge we encountered accommodating images with different lighting conditions. We notice that the method described in the paper is very dependent on the color intensities of the image. By observing the example images from the paper, we deduce that the ideal condition for this algorithm is to have bright yellow exudates on a uniform red background. As we mentioned earlier in the color histogram section, our data set contains images with different lighting configurations. We approach this problem by implementing histogram normalization. The process is described below.
+
 
 \begin{thebibliography}{9}
 \bibitem{hann2009}
