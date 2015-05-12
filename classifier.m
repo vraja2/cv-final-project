@@ -1,8 +1,8 @@
 function classifier
     addpath ./vlfeat-0.9.20
     labels = read_labels();
-    %[descriptors,labels] = get_sift('./training_data/train',labels,100);
-    %save('classifier.mat');
+    [descriptors,labels] = get_sift('./training_data/train',labels,100);
+    %save('new_descriptors.mat');
     %get_left_right(labels);
     %build the sift matrix
     [descriptors,~] = load_sift();
@@ -14,6 +14,26 @@ function classifier
     perform_cross_validation(right_matrices,right_labels);
 end
 
+function display_sift(files,img_indices)
+    arr = [1,501,1001,1501,2001];
+    vectors_per_im = 40;
+    imdir = './training_data/train';
+    for i=1:5
+        fn = files(img_indices(arr(i))).name;
+        im = imreadbw(fullfile(imdir,fn));
+        im = im-min(im(:));
+        im = im/max(im(:));
+        [f,d] = vl_sift(im);
+        %select 100 random sift feature vectors for each image
+        perm = randperm(size(f,2));
+        sel = perm(1:vectors_per_im);
+        sel_descriptors = d(:,sel);
+        figure,imshow(im),hold on;
+        h3 = vl_plotsiftdescriptor(d(:,sel),f(:,sel)) ;
+        set(h3,'color','g') ;
+    end
+end
+
 function [left_im,left_labels,right_im,right_labels] = separate_images(im_labels,matrices)
     l0_im = find(im_labels == 0);
     l1_im = find(im_labels == 1);
@@ -21,6 +41,8 @@ function [left_im,left_labels,right_im,right_labels] = separate_images(im_labels
     l3_im = find(im_labels == 3);
     l4_im = find(im_labels == 4);
     files = dir(fullfile('./training_data/train', '*.jpeg'));
+    [~,order] = sort_nat({files.name});
+    files = files(order);
     l0_images = files(l0_im);
     [l0_left,l0_right] = get_left_right(l0_images(1:500),matrices(1:500));
     l1_images = files(l1_im);
@@ -53,7 +75,7 @@ function [left_images,right_images] = get_left_right(files,matrices)
 end
 
 function [descriptors,labels] = load_sift
-    classifier_mat = load('classifier.mat');
+    classifier_mat = load('new_d.mat');
     descriptors = classifier_mat.descriptors;
     labels = classifier_mat.labels;
 end
@@ -125,6 +147,8 @@ end
 
 function [descriptors,labels] = get_sift(imdir,im_labels,vectors_per_im)
     files = dir(fullfile(imdir, '*.jpeg'));
+    [~,order] = sort_nat({files.name});
+    files = files(order);
     n = numel(files);
     %create a list to store all the indices of images you want sift vectors
     %for
@@ -137,6 +161,7 @@ function [descriptors,labels] = get_sift(imdir,im_labels,vectors_per_im)
     img_indices = [l0_im(1:500)',l1_im(1:500)',l2_im(1:500)',l3_im(1:500)',l4_im(1:500)'];
     descriptors = [];
     labels = [];
+    display_sift(files,img_indices);
     for i = 1:numel(img_indices)
         display(i);
         fn = files(img_indices(i)).name;
@@ -212,7 +237,7 @@ function perform_cross_validation(matrices,labels)
     num_samples = size(matrices,2);
     num_folds = 10;
     indices = crossvalind('Kfold',num_samples,num_folds);
-    K=100;
+    K=200;
     for i=1:num_folds
         test = (indices == i);
         train = ~test;
@@ -220,14 +245,14 @@ function perform_cross_validation(matrices,labels)
         test_labels = labels(test);
         train_matrices = matrices(train);
         train_labels = labels(train);
-        sift_matrix = construct_sift_matrix(train_matrices,20);
+        sift_matrix = construct_sift_matrix(train_matrices,40);
         means = initialize_means(K,sift_matrix);
         training_histograms = compute_histogram(train_matrices,means);
         testing_histograms = compute_histogram(test_matrices,means);
-        svmModel = fitcecoc(training_histograms,train_labels');
-        predictions = predict(svmModel,testing_histograms);
-        %evaluate(training_histograms,testing_histograms,train_labels,test_labels);
-        evaluateSVM(predictions,test_labels);
+        %svmModel = fitcecoc(training_histograms,train_labels');
+        %predictions = predict(svmModel,testing_histograms);
+        evaluate(training_histograms,testing_histograms,train_labels,test_labels);
+        %evaluateSVM(predictions,test_labels);
     end
 end
 
@@ -238,7 +263,8 @@ function evaluateSVM(predictions,test_labels)
           num_correct = num_correct+1; 
         end
     end
-    display(num_correct);
+    display(num_correct/length(test_labels));
+    buildConfusionMatrix(test_labels,predictions);
 end
 
 function [sliced_descriptors,sliced_labels] = slice_sift(descriptors,labels,num_per_slice)
