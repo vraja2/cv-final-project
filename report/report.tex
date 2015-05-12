@@ -23,7 +23,7 @@ Martin Liu \\
 Department of Computer Science \\
 University of Illinois\\
 Urbana, IL 61801 \\
-\texttt{mliu2@illinois.edu} \\
+\texttt{liu242@illinois.edu} \\
 }
 
 % The \author macro works with any number of authors. There are two commands
@@ -45,7 +45,7 @@ Urbana, IL 61801 \\
 \maketitle
 
 \begin{abstract}
-This paper describes some generalized and domain-dependent approaches to automatically detect the severity of diabetic retionapthy (DR) in input eye images. Our generalized approaches include classification with color histograms and SIFT feature vectors, while our domain-dependent solutions attempted to detect specific characteristics of the disease such as exudates and dot hemorrhages using computer vision techniques. Using SIFT features, we achieved an accuracy of 26.15\% on left eyes and 28.88\% on right eyes.%TODO: add results of histogram and exudate classification
+This paper describes some generalized and domain-dependent approaches to automatically detect the severity of diabetic retionapthy (DR) in input eye images. Our generalized approaches include classification with color histograms and SIFT feature vectors, while our domain-dependent solutions attempted to detect specific characteristics of the disease such as exudates and dot hemorrhages using computer vision techniques. Using SIFT features, we achieved an accuracy of 26.15\% on left eyes and 28.88\% on right eyes. With color histograms, we obtained an accuracy of 22.8\% on left eyes and 21.7\% on right eyes. Finally, classification using exudate detection performed the best with an accuracy of 30.9\% on a intermixed dataset of left and right eyes.
 \end{abstract}
 
 \section{Introduction}
@@ -202,7 +202,7 @@ While much of our effort is spent on fixing lighting, a crucial improvement need
  We see that the algorithm incorrectly marks many of the veins as exudate regions. This leads to results where a healthy eye is misclassified because of artificially high exudate pixel counts. From our observations, we notice that this often occurs in images that have highly prominent veins.
 
 \section{Future Work and Conclusion}
-We approach the problem of classifying diabetic retinopathy by using generalized features including SIFT vectors and color histograms as well as domain-dependent features such as exudate detection, which is described in Hann's paper. From our experiments we found that exudate detection performed the best with an accuracy of 30.9\%. SIFT vectors yielded an accuracy of 26.15\% on left eyes and 28.88\% on right eyes. Color histograms yielded an accuracy of 22.8\% on left eyes and 21.7\% on right eyes. \\ \\
+We approach the problem of classifying diabetic retinopathy by using generalized features including SIFT vectors and color histograms as well as domain-dependent features such as exudate detection, which is described in Hann's paper. From our experiments we found that classification with exudate detection performed the best with an accuracy of 30.9\%. SIFT vectors yielded an accuracy of 26.15\% on left eyes and 28.88\% on right eyes. Color histograms yielded an accuracy of 22.8\% on left eyes and 21.7\% on right eyes. \\ \\
 From our observations, we found that there are many images of unhealthy eyes in our data set that exhibit neither of the two symptoms described in Hann's paper. For example in the images below, the eyes clearly have unhealthy regions, but neither exudates nor dot hemorrhages can be found. 
 
 \begin{figure*}[htp]
