@@ -182,8 +182,39 @@ Realizing that exudate regions correspond to abrupt jumps in color intensities, 
 To classify images, we build a multiclass SVM where the feature for an image is the number of exudate pixels. Using 10-fold cross validation we are able to achieve an accuracy of 30.9\%.
 
 \subsubsection{Light Normalization}
-Another challenge we encountered accommodating images with different lighting conditions. We notice that the method described in the paper is very dependent on the color intensities of the image. By observing the example images from the paper, we deduce that the ideal condition for this algorithm is to have bright yellow exudates on a uniform red background. As we mentioned earlier in the color histogram section, our data set contains images with different lighting configurations. We approach this problem by implementing histogram normalization. The process is described below.
+Another challenge we encountered was accommodating images with different lighting conditions. We notice that the method described in the paper is very dependent on the color intensities of the image. By observing the example images from the paper, we deduce that the ideal condition for this algorithm is to have bright yellow exudates on a uniform red background. As we mentioned earlier in the color histogram section, our data set contains images with different lighting configurations. We approach this problem by implementing histogram normalization. The process is described below.
+\begin{figure}[H]
+    \centerline{\includegraphics[scale=0.7]{./images/Light_Normalization/flowchart.png}}
+\end{figure}
+In this example, the input image has a bright blue light around the boundary of the eye. To fix the lighting condition, we found an image from our dataset that is visually similar to the example images presented in the paper. We use this image as a reference and normalize input images based on the histogram distribution. We see that the normalized image has much fewer bright pixels around the boundaries. Above is a side-by-side image of the exudate map. Clearly, the left exudate map has the top-left region highlighted which is incorrect, while the normalized exudate map does not.
 
+\subsubsection{Improvements for Exudate Detection}
+While much of our effort is spent on fixing lighting, a crucial improvement needed for this algorithm is better discrimination between exudates and veins. The figure below shows an example of a label 0 image and its exudate map.
+
+\begin{figure*}[htp]
+  \centering
+  \subfigure[Input Image]{\includegraphics[height=1.5in,width=1.8in]{./images/detecting_veins_orig.png}
+}\quad
+  \subfigure[Output Exudate Map]{\includegraphics[height=1.5in,width=1.8in]{./images/detecting_veins_map.png}
+}
+\end{figure*}
+
+ We see that the algorithm incorrectly marks many of the veins as exudate regions. This leads to results where a healthy eye is misclassified because of artificially high exudate pixel counts. From our observations, we notice that this often occurs in images that have highly prominent veins.
+
+\section{Future Work and Conclusion}
+We approach the problem of classifying diabetic retinopathy by using generalized features including SIFT vectors and color histograms as well as domain-dependent features such as exudate detection, which is described in Hann's paper. From our experiments we found that exudate detection performed the best with an accuracy of 30.9\%. SIFT vectors yielded an accuracy of 26.15\% on left eyes and 28.88\% on right eyes. Color histograms yielded an accuracy of 22.8\% on left eyes and 21.7\% on right eyes. \\ \\
+From our observations, we found that there are many images of unhealthy eyes in our data set that exhibit neither of the two symptoms described in Hann's paper. For example in the images below, the eyes clearly have unhealthy regions, but neither exudates nor dot hemorrhages can be found. 
+
+\begin{figure*}[htp]
+  \centering
+  \subfigure{\includegraphics[height=1.5in,width=1.8in]{./images/sympnot1.jpeg}
+}\quad
+  \subfigure{\includegraphics[height=1.5in,width=1.8in]{./images/sympnot2.jpeg}
+}
+\caption{Images with symptoms not described in Hann's paper}
+\end{figure*}
+
+We aim to extend our algorithm to recognize these symptoms, as well as improving our classifiers with these new recognition capabilities.
 
 \begin{thebibliography}{9}
 \bibitem{hann2009}
